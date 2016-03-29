@@ -30,6 +30,11 @@ def get_filename():
     return "%06d.py" % app.config["FILE_COUNTER"]
 
 
+def get_no_file_error(app_id):
+    return json.dumps(
+        {"appId": app_id, "error": "Cannot find a corresponding file."})
+
+
 def get_pending(app_id):
     return json.dumps({"appId": app_id, "status": "pending"})
 
@@ -48,10 +53,13 @@ def submit():
 def get_app_status(app_id):
     if len(app_id) < 6:
         app_id = "%06d" % int(app_id)
-    file_path = os.path.join(app.config["RESULT_FOLDER"], app_id + ".res")
+    file_path = os.path.join(UPLOAD_FOLDER, app_id + ".py")
+    if os.path.isfile(file_path):
+        return get_pending(app_id)
+    res_path = os.path.join(RESULT_FOLDER, app_id + ".res")
     if os.path.isfile(file_path):
         return json.load(open(file_path))
-    return get_pending(app_id)
+    return get_no_file_error(app_id)
 
 
 @app.route("/status/<app_id>/<count>")
@@ -60,11 +68,7 @@ def get_status(app_id, count):
     file_id = int(app_id)
     while count > 0:
         app_id = "%06d" % file_id
-        file_path = os.path.join(app.config["RESULT_FOLDER"], app_id + ".res")
-        if os.path.isfile(file_path):
-            r.append(json.load(open(file_path)))
-        else:
-            r.append(get_pending(app_id))
+        r.append(get_app_status(app_id))
         file_id = file_id + 1
         count = count - 1
     return json.dumps(r)
