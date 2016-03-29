@@ -62,14 +62,20 @@ def get_app_status(app_id):
     return get_no_file_error(app_id)
 
 
+@app.route("/recent/<count>")
+def get_recent_status(count):
+    last_app = "%06d" % app.config["FILE_COUNTER"]
+    return get_status(last_app, count)
+
+
 @app.route("/status/<app_id>/<count>")
 def get_status(app_id, count):
     r = []
     file_id = int(app_id)
-    while count > 0:
+    while file_id > 0 and count > 0:
         app_id = "%06d" % file_id
         r.append(get_app_status(app_id))
-        file_id = file_id + 1
+        file_id = file_id - 1
         count = count - 1
     return json.dumps(r)
 
