@@ -16,5 +16,7 @@ MASTER_IP = "spark://<master_ip>:7077"
 SUBMIT_COMMAND = (SPARK_PATH + "/bin/spark-submit --master " + MASTER_IP +
                   " %s 1> %s 2> %s & disown")
 
-SPARK_SERVER = "http://<url>:8080/api/v1"
+SPARK_SERVER = "http://<master_ip>:8080/api/v1"
 APP_STATUS_API = SPARK_SERVER + "/applications"
+
+INIT_DB = {"runs": []}

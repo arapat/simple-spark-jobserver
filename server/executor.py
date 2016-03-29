@@ -6,7 +6,7 @@ import shutil
 from time import sleep
 from Constants import (DB_PATH, UPLOAD_FOLDER, ARCHIVE_FOLDER, RESULT_FOLDER,
                        OUTPUT_FOLDER)
-from Constants import APP_STATUS_API, SUBMIT_COMMAND
+from Constants import APP_STATUS_API, SUBMIT_COMMAND, INIT_DB
 
 db = None
 to_file_id = None
@@ -16,7 +16,11 @@ last_completed = None
 
 def load_db():
     global db, to_file_id
-    db = pickle.load(open(DB_PATH, "rb"))
+    try:
+        db = pickle.load(open(DB_PATH, "rb"))
+    except IOError:
+        db = INIT_DB
+        dump_db()
     to_file_id = dict([(b, a) for a, b in db["runs"]])
 
 
