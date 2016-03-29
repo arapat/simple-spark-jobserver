@@ -3,7 +3,8 @@ import os
 import pickle
 import requests
 import shutil
-from time import sleep
+import sys
+from time import sleep, localtime, strftime
 from Constants import (DB_PATH, UPLOAD_FOLDER, ARCHIVE_FOLDER, RESULT_FOLDER,
                        OUTPUT_FOLDER)
 from Constants import APP_STATUS_API, SUBMIT_COMMAND, INIT_DB
@@ -12,6 +13,12 @@ db = None
 to_file_id = None
 
 last_completed = None
+
+
+def show_message(message):
+    sys.stdout.write("[%s] " % strftime("%Y-%m-%d %H:%M:%S", localtime()))
+    sys.stdout.write(message + "\n")
+    sys.stdout.flush()
 
 
 def load_db():
@@ -26,6 +33,7 @@ def load_db():
 
 def dump_db():
     pickle.dump(db, open(DB_PATH, "wb"))
+    show_message("Updated db.")
 
 
 def get_app_status():
@@ -59,6 +67,7 @@ def update_result(result, app_name):
     else:
         r["status"] = "running"
     json.dump(r, open(os.path.join(RESULT_FOLDER, app_name + ".res"), "wb"))
+    show_message("Result file for app %s is updated." % app_name)
 
 
 def run_program(queue_length):
@@ -66,6 +75,7 @@ def run_program(queue_length):
     if not progs:
         return
 
+    show_message("Submitting a new file.")
     filename = sorted(progs)[0]
     app_name = filename.split(',', 1)[0]
     src_path = os.path.join(UPLOAD_FOLDER, filename)
@@ -82,6 +92,7 @@ def run_program(queue_length):
     update_result(status[0], appName)
     tgt_path = os.path.join(ARCHIVE_FOLDER, filename)
     shutil.move(src_path, tgt_path)
+    show_message("New app %s is submitted." % app_name)
 
 
 def refresh():
@@ -90,6 +101,7 @@ def refresh():
     if status[0]["attempts"][0]["completed"]:
         spark_id = status[0]["id"]
         if last_completed != spark_id:
+            show_message("Job %s is completed." % spark_id)
             last_completed = spark_id
             update_result(status[0], to_file_id[spark_id])
         run_program(len(status))
@@ -98,5 +110,7 @@ def refresh():
 if __name__ == "__main__":
     load_db()
     while True:
+        show_message("Refreshing...")
         refresh()
+        show_message("Refreshing finished.")
         sleep(15)

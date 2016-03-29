@@ -6,7 +6,7 @@ from Constants import UPLOAD_FOLDER, ARCHIVE_FOLDER, RESULT_FOLDER
 from Constants import ALLOWED_EXTENSIONS
 
 UPLOAD_ERROR = json.dumps(
-    {"error:" "Cannot find valid Python source code file."})
+    {"error": "Cannot find valid Python source code file."})
 
 app = Flask(__name__)
 
