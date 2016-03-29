@@ -98,7 +98,7 @@ def run_program(queue_length):
 def refresh():
     global last_completed
     status = get_app_status()
-    if status[0]["attempts"][0]["completed"]:
+    if status and status[0]["attempts"][0]["completed"]:
         spark_id = status[0]["id"]
         if last_completed != spark_id:
             show_message("Job %s is completed." % spark_id)
