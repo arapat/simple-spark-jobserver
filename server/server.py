@@ -45,7 +45,7 @@ def submit():
     if not file and not allowed_file(file.filename):
         return UPLOAD_ERROR
     filename = get_filename()
-    file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+    file.save(os.path.join(UPLOAD_FOLDER, filename))
     return json.dumps({"appId": filename.split(".", 1)[0]})
 
 
@@ -57,8 +57,8 @@ def get_app_status(app_id):
     if os.path.isfile(file_path):
         return get_pending(app_id)
     res_path = os.path.join(RESULT_FOLDER, app_id + ".res")
-    if os.path.isfile(file_path):
-        return json.load(open(file_path))
+    if os.path.isfile(res_path):
+        return open(res_path).read()
     return get_no_file_error(app_id)
 
 
@@ -71,7 +71,7 @@ def get_recent_status(count):
 @app.route("/status/<app_id>/<count>")
 def get_status(app_id, count):
     r = []
-    file_id = int(app_id)
+    file_id, count = int(app_id), int(count)
     while file_id > 0 and count > 0:
         app_id = "%06d" % file_id
         r.append(get_app_status(app_id))

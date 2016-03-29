@@ -77,7 +77,7 @@ def run_program(queue_length):
 
     show_message("Submitting a new file.")
     filename = sorted(progs)[0]
-    app_name = filename.split(',', 1)[0]
+    app_name = filename.split('.', 1)[0]
     src_path = os.path.join(UPLOAD_FOLDER, filename)
     stdout_path = os.path.join(OUTPUT_FOLDER, app_name + "-stdout.txt")
     stderr_path = os.path.join(OUTPUT_FOLDER, app_name + "-stderr.txt")
@@ -89,7 +89,7 @@ def run_program(queue_length):
         sleep(5)
         status = get_app_status()
 
-    update_result(status[0], appName)
+    update_result(status[0], app_name)
     tgt_path = os.path.join(ARCHIVE_FOLDER, filename)
     shutil.move(src_path, tgt_path)
     show_message("New app %s is submitted." % app_name)
@@ -103,7 +103,12 @@ def refresh():
         if last_completed != spark_id:
             show_message("Job %s is completed." % spark_id)
             last_completed = spark_id
-            update_result(status[0], to_file_id[spark_id])
+            if spark_id in to_file_id:
+                update_result(status[0], to_file_id[spark_id])
+            else:
+                show_message("Warning: the job %s cannot be found in the db."
+                             % spark_id)
+    if not status or status[0]["attempts"][0]["completed"]:
         run_program(len(status))
 
 
