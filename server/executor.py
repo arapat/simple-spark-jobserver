@@ -75,12 +75,12 @@ def run_program(queue_length):
     if not progs:
         return
 
-    show_message("Submitting a new file.")
     filename = sorted(progs)[0]
     app_name = filename.split('.', 1)[0]
     src_path = os.path.join(UPLOAD_FOLDER, filename)
     stdout_path = os.path.join(OUTPUT_FOLDER, app_name + "-stdout.txt")
     stderr_path = os.path.join(OUTPUT_FOLDER, app_name + "-stderr.txt")
+    show_message("Submitting a new file %s." % app_name)
     os.system(SUBMIT_COMMAND % (src_path, stdout_path, stderr_path))
 
     # Wait until the Spark server received the program
