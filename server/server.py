@@ -63,9 +63,9 @@ def get_app_status(app_id):
 
 
 @app.route("/apps")
-def get_app_status():
+def get_apps_status():
     r = []
-    for app_id in request.args.getlist("app_ids"):
+    for app_id in request.args.getlist("app_id"):
         r.append(json.loads(get_app_status(app_id)))
     return json.dumps(r)
 
