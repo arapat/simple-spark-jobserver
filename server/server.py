@@ -63,7 +63,7 @@ def get_app_status(app_id):
 
 
 @app.route("/apps", methods=["POST"])
-def get_app_status():
+def get_apps_status():
     r = []
     for app_id in request.form("app_ids"):
         r.append(json.loads(get_app_status(app_id)))
