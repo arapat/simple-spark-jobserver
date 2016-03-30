@@ -62,10 +62,10 @@ def get_app_status(app_id):
     return get_no_file_error(app_id)
 
 
-@app.route("/apps")
+@app.route("/apps", methods=["POST"])
 def get_app_status():
     r = []
-    for app_id in request.args.getlist("app_ids"):
+    for app_id in request.form("app_ids"):
         r.append(json.loads(get_app_status(app_id)))
     return json.dumps(r)
 
