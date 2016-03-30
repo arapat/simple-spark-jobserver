@@ -62,6 +62,14 @@ def get_app_status(app_id):
     return get_no_file_error(app_id)
 
 
+@app.route("/apps")
+def get_app_status():
+    r = []
+    for app_id in request.args.getlist("app_ids"):
+        r.append(json.loads(get_app_status(app_id)))
+    return json.dumps(r)
+
+
 @app.route("/recent/<count>")
 def get_recent_status(count):
     last_app = "%06d" % app.config["FILE_COUNTER"]
@@ -74,7 +82,7 @@ def get_status(app_id, count):
     file_id, count = int(app_id), int(count)
     while file_id > 0 and count > 0:
         app_id = "%06d" % file_id
-        r.append(get_app_status(app_id))
+        r.append(json.loads(get_app_status(app_id)))
         file_id = file_id - 1
         count = count - 1
     return json.dumps(r)
