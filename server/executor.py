@@ -56,15 +56,18 @@ def update_result(app_name, status, detailed=False, streams=None):
 
 
 def save_streams(app_name, process):
-    def get_random_name():
-        return ''.join(random.SystemRandom().choice(RANDOM_SET)
+    rand_dir = ''.join(random.SystemRandom().choice(RANDOM_SET)
                        for _ in range(RANDOM_FILENAME_LENGTH))
-    rand_out, rand_err = get_random_name(), get_random_name()
-    open(os.path.join(OUTPUT_FOLDER, rand_out), "w").write(
-        process.stdout.read())
-    open(os.path.join(OUTPUT_FOLDER, rand_err), "w").write(
-        process.stderr.read())
-    return (rand_out, rand_err)
+    dirpath = os.path.join(OUTPUT_FOLDER, rand_dir)
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
+
+    out_filepath = os.path.join(dirpath, app_name + "-stdout")
+    open(out_filepath, "w").write(process.stdout.read())
+    err_filepath = os.path.join(dirpath, app_name + "-stderr")
+    open(err_filepath, "w").write(process.stderr.read())
+    return ("%s/%s-stdout" % (rand_dir, app_name),
+            "%s/%s-stderr" % (rand_dir, app_name))
 
 
 def run_program():
