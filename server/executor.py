@@ -37,8 +37,11 @@ def get_all_files(dir_name):
 def update_result(app_name, status, detailed=False, streams=None):
     r = {"appId": app_name, "status": status}
     if detailed:
-        r["stdout"] = DOWNLOAD_URL + "/" + streams[0]
-        r["stderr"] = DOWNLOAD_URL + "/" + streams[1]
+        (stdout, stdout_file), (stderr, stderr_file) = streams
+        r["stdout"] = stdout
+        r["stdoutFile"] = DOWNLOAD_URL + "/" + stdout_file
+        r["stderr"] = stderr
+        r["stderrFile"] = DOWNLOAD_URL + "/" + stderr_file
         spark = get_spark_status(app_name)
         if not spark:
             if status == COMPLETED_MESSAGE:
@@ -62,12 +65,14 @@ def save_streams(app_name, process):
     if not os.path.exists(dirpath):
         os.makedirs(dirpath)
 
+    stdout = process.stdout.read()
     out_filepath = os.path.join(dirpath, app_name + "-stdout")
-    open(out_filepath, "w").write(process.stdout.read())
+    open(out_filepath, "w").write(stdout)
+    stderr = process.stderr.read()
     err_filepath = os.path.join(dirpath, app_name + "-stderr")
     open(err_filepath, "w").write(process.stderr.read())
-    return ("%s/%s-stdout" % (rand_dir, app_name),
-            "%s/%s-stderr" % (rand_dir, app_name))
+    return ((stdout[:STREAM_LEN], "%s/%s-stdout" % (rand_dir, app_name)),
+            (stderr[:STREAM_LEN], "%s/%s-stderr" % (rand_dir, app_name)))
 
 
 def run_program():
