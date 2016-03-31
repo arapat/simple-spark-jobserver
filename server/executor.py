@@ -76,7 +76,7 @@ def run_program():
         return
 
     # Retrive next file to run
-    filename = sorted(progs)[0]
+    filename = sorted(progs, key=lambda t: int(t.split('.', 1)[0]))[0]
     app_name = filename.split('.', 1)[0]
     src_path = os.path.join(UPLOAD_FOLDER, filename)
     rt_path = os.path.join(RUNTIME_FOLDER, filename)
