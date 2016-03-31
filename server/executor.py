@@ -3,16 +3,14 @@ import os
 import pickle
 import requests
 import shutil
+import signal
+import subprocess
 import sys
+from datetime import datetime
 from time import sleep, localtime, strftime
-from Constants import (DB_PATH, UPLOAD_FOLDER, ARCHIVE_FOLDER, RESULT_FOLDER,
-                       OUTPUT_FOLDER)
-from Constants import APP_STATUS_API, SUBMIT_COMMAND, INIT_DB
+from Constants import *
 
-db = None
-to_file_id = None
-
-last_completed = None
+running_queue = []
 
 
 def show_message(message):
@@ -21,99 +19,111 @@ def show_message(message):
     sys.stdout.flush()
 
 
-def load_db():
-    global db, to_file_id
-    try:
-        db = pickle.load(open(DB_PATH, "rb"))
-    except IOError:
-        db = INIT_DB
-        dump_db()
-    to_file_id = dict([(b, a) for a, b in db["runs"]])
-
-
-def dump_db():
-    pickle.dump(db, open(DB_PATH, "wb"))
-    show_message("Updated db.")
-
-
-def get_app_status():
+def get_spark_status(app_name):
     r = requests.get(APP_STATUS_API)
-    return r.json()
+    for t in r.json():
+        if t["name"] == app_name:
+            return t
+    return None
 
 
 def get_all_files(dir_name):
     return os.listdir(dir_name)
 
 
-def update_result(result, app_name):
-    spark_id = result["id"]
-    if (app_name, spark_id) not in db["runs"]:
-        to_file_id[spark_id] = app_name
-        db["runs"].append((app_name, spark_id))
-        dump_db()
-    r = {
-        "appId": app_name,
-        "runId": spark_id,
-        "name": result["name"],
-        "startTime": result["attempts"][0]["startTime"],
-        "endTime": result["attempts"][0]["endTime"]
-    }
-    if result["attempts"][0]["completed"]:
-        r["status"] = "completed"
-        r["stdout"] = open(
-            os.path.join(OUTPUT_FOLDER, app_name + "-stdout.txt")).read()
-        r["stderr"] = open(
-            os.path.join(OUTPUT_FOLDER, app_name + "-stderr.txt")).read()
-    else:
-        r["status"] = "running"
+def update_result(app_name, status, detailed=False):
+    r = {"appId": app_name, "status": status}
+    if detailed:
+        r["stdout"] = DOWNLOAD_URL + "/%s-stdout" % app_name
+        r["stderr"] = DOWNLOAD_URL + "/%s-stderr" % app_name
+    if detailed and status != CE_MESSAGE:
+        spark = get_spark_status(app_name)
+        if not spark:
+            r["status"] = FAILED_TO_LAUNCH_MESSAGE
+        else:
+            r["runId"] = r["id"]
+            r["duration"] = (
+                datetime.strptime(result["attempts"][0]["startTime"]) -
+                datetime.strptime(result["attempts"][0]["endTime"])
+            ).seconds
     json.dump(r, open(os.path.join(RESULT_FOLDER, app_name + ".res"), "wb"))
-    show_message("Result file for app %s is updated." % app_name)
+    show_message("Result file for app %s (%s) is updated." %
+                 (app_name, r["status"]))
 
 
-def run_program(queue_length):
+def save_streams(app_name, process):
+    open(os.path.join(OUTPUT_FOLDER, app_name + "-stdout"), "w").write(
+        process.stdout.read())
+    open(os.path.join(OUTPUT_FOLDER, app_name + "-stderr"), "w").write(
+        process.stderr.read())
+
+
+def run_program():
     progs = get_all_files(UPLOAD_FOLDER)
     if not progs:
         return
 
+    # Retrive next file to run
     filename = sorted(progs)[0]
     app_name = filename.split('.', 1)[0]
     src_path = os.path.join(UPLOAD_FOLDER, filename)
-    stdout_path = os.path.join(OUTPUT_FOLDER, app_name + "-stdout.txt")
-    stderr_path = os.path.join(OUTPUT_FOLDER, app_name + "-stderr.txt")
-    show_message("Submitting a new file %s." % app_name)
-    os.system(SUBMIT_COMMAND % (src_path, stdout_path, stderr_path))
+    rt_path = os.path.join(RUNTIME_FOLDER, filename)
+    shutil.move(src_path, rt_path)
 
-    # Wait until the Spark server received the program
-    status = get_app_status()
-    while len(status) <= queue_length:
+    # Compile file
+    show_message("Compiling a new file %s." % app_name)
+    update_result(app_name, COMPILE_MESSAGE)
+    process = subprocess.Popen((COMPILE_COMMAND % (rt_path)).split(),
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    while process.poll() is None:
         sleep(5)
-        status = get_app_status()
+    if process.poll() != 0:
+        save_streams(app_name, process)
+        update_result(app_name, CE_MESSAGE, detailed=True)
+        return
 
-    update_result(status[0], app_name)
-    tgt_path = os.path.join(ARCHIVE_FOLDER, filename)
-    shutil.move(src_path, tgt_path)
+    # Submit file to Spark cluster
+    show_message("Submitting a new file %s." % app_name)
+    update_result(app_name, RUNNING_MESSAGE)
+    start = datetime.now()
+    process = subprocess.Popen((SUBMIT_COMMAND % (app_name, rt_path)).split(),
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    running_queue.append((app_name, process, start))
     show_message("New app %s is submitted." % app_name)
 
 
 def refresh():
-    global last_completed
-    status = get_app_status()
-    if status and status[0]["attempts"][0]["completed"]:
-        spark_id = status[0]["id"]
-        if last_completed != spark_id:
-            show_message("Job %s is completed." % spark_id)
-            last_completed = spark_id
-            if spark_id in to_file_id:
-                update_result(status[0], to_file_id[spark_id])
+    def remove(k):
+        app_name, process, start = running_queue[k]
+        filename = app_name + ".py"
+        shutil.move(os.path.join(RUNTIME_FOLDER, filename),
+                    os.path.join(ARCHIVE_FOLDER, filename))
+        del running_queue[k]
+        show_message("Job %s is removed." % app_name)
+
+    k = 0
+    now = datetime.now()
+    while k < len(running_queue):
+        app_name, process, start = running_queue[k]
+        if process.poll() is None and (now - start).seconds > TIMEOUT:
+            os.kill(process.pid, signal.SIGKILL)
+            save_streams(app_name, process)
+            update_result(app_name, TLE_MESSAGE, detailed=True)
+            remove(k)
+        elif process.poll() is not None:
+            save_streams(app_name, process)
+            if process.poll() == 0:
+                update_result(app_name, COMPLETED_MESSAGE, detailed=True)
             else:
-                show_message("Warning: the job %s cannot be found in the db."
-                             % spark_id)
-    if not status or status[0]["attempts"][0]["completed"]:
-        run_program(len(status))
+                update_result(app_name, RTE_MESSAGE, detailed=True)
+            remove(k)
+        else:
+            k = k + 1
+    if len(running_queue) < QUEUE_SIZE:
+        run_program()
 
 
 if __name__ == "__main__":
-    load_db()
     while True:
         show_message("Refreshing...")
         refresh()
