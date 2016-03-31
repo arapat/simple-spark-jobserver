@@ -38,10 +38,10 @@ def update_result(app_name, status, detailed=False):
     if detailed:
         r["stdout"] = DOWNLOAD_URL + "/%s-stdout" % app_name
         r["stderr"] = DOWNLOAD_URL + "/%s-stderr" % app_name
-    if detailed and status != CE_MESSAGE:
         spark = get_spark_status(app_name)
         if not spark:
-            r["status"] = FAILED_TO_LAUNCH_MESSAGE
+            if status == COMPLETED_MESSAGE:
+                r["status"] = FAILED_TO_LAUNCH_MESSAGE
         else:
             r["runId"] = spark["id"]
             t1 = datetime.strptime(
