@@ -10,6 +10,8 @@ from datetime import datetime
 from time import sleep, localtime, strftime
 from Constants import *
 
+TIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fGMT"
+
 running_queue = []
 
 
@@ -41,11 +43,12 @@ def update_result(app_name, status, detailed=False):
         if not spark:
             r["status"] = FAILED_TO_LAUNCH_MESSAGE
         else:
-            r["runId"] = r["id"]
-            r["duration"] = (
-                datetime.strptime(result["attempts"][0]["startTime"]) -
-                datetime.strptime(result["attempts"][0]["endTime"])
-            ).seconds
+            r["runId"] = spark["id"]
+            t1 = datetime.strptime(
+                spark["attempts"][0]["startTime"], TIME_FORMAT)
+            t2 = datetime.strptime(
+                spark["attempts"][0]["endTime"], TIME_FORMAT)
+            r["duration"] = (t2 - t1).seconds
     json.dump(r, open(os.path.join(RESULT_FOLDER, app_name + ".res"), "wb"))
     show_message("Result file for app %s (%s) is updated." %
                  (app_name, r["status"]))
@@ -76,7 +79,7 @@ def run_program():
     process = subprocess.Popen((COMPILE_COMMAND % (rt_path)).split(),
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     while process.poll() is None:
-        sleep(5)
+        sleep(COMPILE_INTERVAL)
     if process.poll() != 0:
         save_streams(app_name, process)
         update_result(app_name, CE_MESSAGE, detailed=True)
@@ -128,4 +131,4 @@ if __name__ == "__main__":
         show_message("Refreshing...")
         refresh()
         show_message("Refreshing finished.")
-        sleep(15)
+        sleep(REFRESH_INTERVAL)

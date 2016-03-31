@@ -16,7 +16,10 @@ MASTER_IP = "<master_ip>"
 MASTER_URL = "spark://%s:7077" % MASTER_IP
 COMPILE_COMMAND = "python -m py_compile %s"
 SUBMIT_COMMAND = (SPARK_PATH + "/bin/spark-submit --master " + MASTER_URL +
-                  "--name %s %s")
+                  " --name %s %s")
+
+COMPILE_INTERVAL = 3
+REFRESH_INTERVAL = 10
 
 SPARK_SERVER = "http://%s:8080/api/v1" % MASTER_IP
 APP_STATUS_API = SPARK_SERVER + "/applications"
