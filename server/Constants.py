@@ -1,3 +1,4 @@
+import string
 
 # Where users upload programs
 UPLOAD_FOLDER = "/path/to/the/uploads"
@@ -20,11 +21,13 @@ SUBMIT_COMMAND = (SPARK_PATH + "/bin/spark-submit --master " + MASTER_URL +
 
 COMPILE_INTERVAL = 3
 REFRESH_INTERVAL = 10
+RANDOM_FILENAME_LENGTH = 16
+RANDOM_SET = string.letters + string.digits
 
 SPARK_SERVER = "http://%s:8080/api/v1" % MASTER_IP
 APP_STATUS_API = SPARK_SERVER + "/applications"
 
-DOWNLOAD_URL = "<download_url>"
+DOWNLOAD_URL = "<download_url>/output"
 QUEUE_SIZE = 3
 TIMEOUT = 90
 
