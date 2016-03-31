@@ -1,7 +1,6 @@
 import json
 import os
 from flask import Flask, request
-from werkzeug import secure_filename
 from Constants import UPLOAD_FOLDER, ARCHIVE_FOLDER, RESULT_FOLDER
 from Constants import ALLOWED_EXTENSIONS
 
