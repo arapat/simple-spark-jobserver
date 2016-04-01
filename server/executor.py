@@ -96,7 +96,7 @@ def run_program():
         sleep(COMPILE_INTERVAL)
     if process.poll() != 0:
         streams = save_streams(app_name, process)
-        update_result(app_name, CE_MESSAGE, detailed=True, streams)
+        update_result(app_name, CE_MESSAGE, detailed=True, streams=streams)
         return
 
     # Submit file to Spark cluster
@@ -125,15 +125,17 @@ def refresh():
         if process.poll() is None and (now - start).seconds > TIMEOUT:
             os.kill(process.pid, signal.SIGKILL)
             streams = save_streams(app_name, process)
-            update_result(app_name, TLE_MESSAGE, detailed=True, streams)
+            update_result(app_name, TLE_MESSAGE,
+                          detailed=True, streams=streams)
             remove(k)
         elif process.poll() is not None:
             streams = save_streams(app_name, process)
             if process.poll() == 0:
                 update_result(app_name, COMPLETED_MESSAGE,
-                              detailed=True, streams)
+                              detailed=True, streams=streams)
             else:
-                update_result(app_name, RTE_MESSAGE, detailed=True, streams)
+                update_result(app_name, RTE_MESSAGE,
+                              detailed=True, streams=streams)
             remove(k)
         else:
             k = k + 1
