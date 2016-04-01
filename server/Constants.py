@@ -28,7 +28,6 @@ RANDOM_SET = string.letters + string.digits
 SPARK_SERVER = "http://%s:8080/api/v1" % MASTER_IP
 APP_STATUS_API = SPARK_SERVER + "/applications"
 
-DOWNLOAD_URL = "<download_url>/output"
 QUEUE_SIZE = 3
 TIMEOUT = 90
 
