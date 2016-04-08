@@ -1,13 +1,20 @@
 import json
 import os
+import requests
 from flask import Flask, request
 from Constants import UPLOAD_FOLDER, ARCHIVE_FOLDER, RESULT_FOLDER
-from Constants import ALLOWED_EXTENSIONS
+from Constants import ALLOWED_EXTENSIONS, SPARK_SERVER_JSON, MARKER_PATH
 
 UPLOAD_ERROR = json.dumps(
     {"error": "Cannot find valid Python source code file."})
 
 app = Flask(__name__)
+
+
+def is_system_ready():
+    if requests.get(SPARK_SERVER_JSON).json()["workers"]:
+        return int(open(MARKER_PATH).read()) == 1
+    return False
 
 
 def allowed_file(filename):
@@ -63,6 +70,13 @@ def get_status(app_id, count):
         file_id = file_id - 1
         count = count - 1
     return json.dumps(r)
+
+
+@app.route("/system")
+def get_system_status():
+    if is_system_ready():
+        return json.dumps({"status": 0})
+    json.dumps({"status": 1})
 
 
 if __name__ == "__main__":

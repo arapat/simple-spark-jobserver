@@ -87,6 +87,7 @@ def run_program():
         return
     if not is_system_ready():
         show_message("Programs pending, but system is not ready.")
+        return
 
     # Retrive next file to run
     filename = sorted(progs, key=lambda t: int(t.split('.', 1)[0]))[0]
