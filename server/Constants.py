@@ -11,6 +11,7 @@ RESULT_FOLDER = "/path/to/the/results"
 # Where we put the programs while it is running
 RUNTIME_FOLDER = "/path/to/the/runtime"
 SPARK_PATH = "/path/to/spark"
+MARKER_PATH = "/path/to/marker"
 
 ALLOWED_EXTENSIONS = set(["py"])
 MASTER_IP = "<master_ip>"
@@ -25,6 +26,7 @@ STREAM_LEN = 10240
 RANDOM_FILENAME_LENGTH = 8
 RANDOM_SET = string.letters + string.digits
 
+SPARK_SERVER_JSON = "http://%s:8080/json" % MASTER_IP
 SPARK_SERVER = "http://%s:8080/api/v1" % MASTER_IP
 APP_STATUS_API = SPARK_SERVER + "/applications"
 

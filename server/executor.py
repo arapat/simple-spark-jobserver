@@ -22,6 +22,12 @@ def show_message(message):
     sys.stdout.flush()
 
 
+def is_system_ready():
+    if requests.get(SPARK_SERVER_JSON).json()["workers"]:
+        return int(open(MARKER_PATH).read()) == 1
+    return False
+
+
 def get_spark_status(app_name):
     r = requests.get(APP_STATUS_API)
     for t in r.json():
@@ -77,7 +83,7 @@ def save_streams(app_name, process):
 
 def run_program():
     progs = get_all_files(UPLOAD_FOLDER)
-    if not progs:
+    if not progs or not is_system_ready():
         return
 
     # Retrive next file to run
