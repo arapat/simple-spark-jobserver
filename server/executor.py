@@ -83,8 +83,10 @@ def save_streams(app_name, process):
 
 def run_program():
     progs = get_all_files(UPLOAD_FOLDER)
-    if not progs or not is_system_ready():
+    if not progs:
         return
+    if not is_system_ready():
+        show_message("Programs pending, but system is not ready.")
 
     # Retrive next file to run
     filename = sorted(progs, key=lambda t: int(t.split('.', 1)[0]))[0]
