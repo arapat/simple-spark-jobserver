@@ -105,6 +105,7 @@ def run_program():
         sleep(COMPILE_INTERVAL)
     if process.poll() != 0:
         streams = save_streams(app_name, process)
+        shutil.move(rt_path, os.path.join(ARCHIVE_FOLDER, filename))
         update_result(app_name, CE_MESSAGE, detailed=True, streams=streams)
         return
 
