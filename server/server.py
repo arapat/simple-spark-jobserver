@@ -76,7 +76,7 @@ def get_status(app_id, count):
 def get_system_status():
     if is_system_ready():
         return json.dumps({"status": 0})
-    json.dumps({"status": 1})
+    return json.dumps({"status": 1})
 
 
 if __name__ == "__main__":
