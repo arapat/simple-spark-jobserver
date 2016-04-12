@@ -41,6 +41,16 @@ def submit():
     return json.dumps({"appId": appId})
 
 
+@app.route("/cancel", methods=["POST"])
+def cancel():
+    appId = request.form["appId"]
+    try:
+        os.remove(os.path.join(UPLOAD_FOLDER, appId + ".py"))
+        return json.dumps({"status": 0})
+    except:
+        return json.dumps({"status": 1})
+
+
 @app.route("/app/<app_id>")
 def get_app_status(app_id):
     file_path = os.path.join(UPLOAD_FOLDER, app_id + ".py")
